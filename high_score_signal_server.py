@@ -141,21 +141,26 @@ SELECT
     
 FROM fas_v2.scoring_history sh
 JOIN public.trading_pairs tp ON sh.trading_pair_id = tp.id
+-- Добавляем JOIN для получения паттернов
+LEFT JOIN fas_v2.sh_patterns shp ON shp.scoring_history_id = sh.id
+LEFT JOIN fas_v2.signal_patterns sp ON shp.signal_patterns_id = sp.id
+    AND sp.pattern_type IN ('SQUEEZE_IGNITION', 'OI_EXPLOSION')
+    AND sp.timeframe IN ('15m', '1h', '4h')
 
--- Проверка наличия нужных паттернов через таблицу связки
 WHERE sh.total_score > 250
     AND tp.contract_type_id = 1
     AND tp.exchange_id = 1
     AND tp.is_active = TRUE
     AND sh.is_active = TRUE
     AND sh.timestamp >= now() - INTERVAL '%s minutes'
+    -- Проверяем что есть хотя бы один нужный паттерн
     AND EXISTS (
         SELECT 1
-        FROM fas_v2.sh_patterns shp
-        JOIN fas_v2.signal_patterns sp ON shp.signal_patterns_id = sp.id
-        WHERE shp.scoring_history_id = sh.id
-            AND sp.pattern_type IN ('SQUEEZE_IGNITION', 'OI_EXPLOSION')
-            AND sp.timeframe IN ('15m', '1h', '4h')
+        FROM fas_v2.sh_patterns shp2
+        JOIN fas_v2.signal_patterns sp2 ON shp2.signal_patterns_id = sp2.id
+        WHERE shp2.scoring_history_id = sh.id
+            AND sp2.pattern_type IN ('SQUEEZE_IGNITION', 'OI_EXPLOSION')
+            AND sp2.timeframe IN ('15m', '1h', '4h')
     )
 
 GROUP BY
