@@ -27,8 +27,11 @@ LimitNOFILE=65536
 LimitNPROC=4096
 
 # Logging
-StandardOutput=append:/home/elcrypto/websocket/logs/high_score_server.log
-StandardError=append:/home/elcrypto/websocket/logs/high_score_error.log
+StandardOutput=journal
+StandardError=journal
+
+# Разрешить запись в директорию проекта
+ReadWritePaths=/home/elcrypto/websocket
 
 # Security settings
 NoNewPrivileges=true
