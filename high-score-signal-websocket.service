@@ -1,0 +1,46 @@
+[Unit]
+Description=High-Score Trading Signal WebSocket Server
+Documentation=https://github.com/yourusername/signal-websocket
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=elcrypto
+Group=elcrypto
+WorkingDirectory=/home/elcrypto/websocket
+Environment="PATH=/home/elcrypto/websocket/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYTHONPATH=/home/elcrypto/websocket"
+
+# Main process
+ExecStart=/home/elcrypto/websocket/venv/bin/python /home/elcrypto/websocket/high_score_signal_server.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=append:/home/elcrypto/websocket/logs/high_score_server.log
+StandardError=append:/home/elcrypto/websocket/logs/high_score_error.log
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/elcrypto/websocket/logs
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
