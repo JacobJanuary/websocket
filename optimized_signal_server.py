@@ -466,7 +466,7 @@ def main():
     # Configuration
     config = {
         'WS_SERVER_HOST': os.getenv('WS_SERVER_HOST', '0.0.0.0'),
-        'WS_SERVER_PORT': os.getenv('WS_SERVER_PORT', '25374'),
+        'WS_SERVER_PORT': os.getenv('OPTIMIZED_WS_PORT', '25374'),
         'WS_AUTH_TOKEN': hashlib.sha256(
             os.getenv('WS_AUTH_PASSWORD', 'change_me_please').encode()
         ).hexdigest(),
