@@ -21,7 +21,12 @@ import websockets
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+current_dir = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(os.path.dirname(current_dir), 'win_rate', '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+else:
+    load_dotenv()
 
 # Logging setup
 logging.basicConfig(
@@ -102,7 +107,7 @@ class OptimizedSignalServer:
         Constructs the complex SQL query to match signals with best strategies.
         Logic is identical to yesterday/1_select_yesterday_signals.py
         """
-        query = f"""
+        query_template = r"""
         WITH best_strategies AS (
             -- Get top strategies with total_pnl > threshold
             SELECT DISTINCT ON (strategy_name, signal_type, market_regime)
@@ -124,7 +129,7 @@ class OptimizedSignalServer:
                     ', '  -- Split by comma-space
                 ) as required_patterns
             FROM optimization.best_parameters
-            WHERE total_pnl_pct > {self.min_strategy_pnl}
+            WHERE total_pnl_pct > {min_pnl}
             ORDER BY
                 strategy_name,
                 signal_type,
@@ -194,7 +199,7 @@ class OptimizedSignalServer:
         WHERE rs.market_regime IS NOT NULL
         ORDER BY rs.signal_id, bs.total_pnl_pct DESC
         """
-        return query
+        return query_template.format(min_pnl=self.min_strategy_pnl)
 
     async def init_db(self):
         """Initialize DB pool"""

@@ -2,7 +2,7 @@
 """
 Real-time Monitor for Best Signals
 Polls the database every 10 seconds for signals with Strategy PnL > 180%
-Shows last 600 minutes on start.
+Shows last 48 hours (2880 minutes) on start.
 """
 
 import asyncio
@@ -39,10 +39,12 @@ DB_CONFIG = {
 }
 
 MIN_PNL = 180.0
-WINDOW_MINUTES = 600
+WINDOW_MINUTES = 2880  # 48 hours
 POLL_INTERVAL = 10
 
-QUERY = f"""
+# Use raw string for regex to avoid SyntaxWarning and escaping issues
+# We use .format() for MIN_PNL injection
+QUERY_TEMPLATE = r"""
 WITH best_strategies AS (
     SELECT DISTINCT ON (strategy_name, signal_type, market_regime)
         strategy_name,
@@ -59,7 +61,7 @@ WITH best_strategies AS (
             ), ', '
         ) as required_patterns
     FROM optimization.best_parameters
-    WHERE total_pnl_pct > {MIN_PNL}
+    WHERE total_pnl_pct > {min_pnl}
     ORDER BY strategy_name, signal_type, market_regime, total_pnl_pct DESC
 ),
 recent_signals AS (
@@ -112,6 +114,9 @@ WHERE rs.market_regime IS NOT NULL
 ORDER BY rs.signal_id, bs.total_pnl_pct DESC
 """
 
+# Prepare the query with the PnL threshold
+QUERY = QUERY_TEMPLATE.format(min_pnl=MIN_PNL)
+
 async def monitor():
     print(f"🚀 Starting Signal Monitor")
     print(f"   Target: Strategy PnL > {MIN_PNL}%")
@@ -129,6 +134,7 @@ async def monitor():
         
         while True:
             try:
+                # Inject window minutes into the %s placeholder
                 rows = await conn.fetch(QUERY % WINDOW_MINUTES)
                 
                 # Sort by timestamp (oldest first for printing)
@@ -159,6 +165,8 @@ async def monitor():
                     if not first_run:
                         # Play sound or visual cue for real-time signals?
                         pass
+                elif first_run:
+                    print("No signals found in the current window.")
                 
                 first_run = False
                 await asyncio.sleep(POLL_INTERVAL)
