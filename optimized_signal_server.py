@@ -254,19 +254,30 @@ class OptimizedSignalServer:
                 for row in rows:
                     signal = {
                         'id': row['signal_id'],
+                        'trading_pair_id': None,  # Not in query, but client expects it
                         'pair_symbol': row['pair_symbol'],
-                        'signal_type': row['signal_type'],
+                        'total_score': float(row['total_score']) if row['total_score'] else 0,
+                        'score_week': 0.0,  # Not used in optimization
+                        'score_month': 0.0,  # Not used in optimization
                         'timestamp': row['signal_timestamp'].isoformat() if row['signal_timestamp'] else None,
                         'created_at': row['created_at'].isoformat() if row['created_at'] else None,
-                        'total_score': float(row['total_score']) if row['total_score'] else 0,
-                        'market_regime': row['market_regime'],
                         'exchange_id': row['exchange_id'],
+                        'contract_type_id': 1,  # Binance Futures
+                        'patterns': [],  # Can be added if needed
+                        'timeframes': [],  # Can be added if needed
                         
-                        # Optimized Parameters
+                        # Parameters in client format (matching high_score_signal_server)
+                        'recommended_action': row['signal_type'],  # LONG/SHORT
+                        'score_week_filter': 0.0,
+                        'score_month_filter': 0.0,
+                        'max_trades_filter': 0,
+                        'stop_loss_filter': float(row['sl_pct']),
+                        'trailing_activation_filter': float(row['ts_activation_pct']),
+                        'trailing_distance_filter': float(row['ts_callback_pct']),
+                        
+                        # Additional fields for info
                         'strategy_name': row['strategy_name'],
-                        'sl_pct': float(row['sl_pct']),
-                        'ts_activation_pct': float(row['ts_activation_pct']),
-                        'ts_callback_pct': float(row['ts_callback_pct']),
+                        'market_regime': row['market_regime'],
                         'strategy_pnl': float(row['strategy_pnl'])
                     }
                     signals.append(signal)
