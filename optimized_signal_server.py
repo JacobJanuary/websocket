@@ -271,14 +271,14 @@ class OptimizedSignalServer:
                         'score_week_filter': 0.0,
                         'score_month_filter': 0.0,
                         'max_trades_filter': 0,
-                        'stop_loss_filter': float(row['sl_pct']),
-                        'trailing_activation_filter': float(row['ts_activation_pct']),
-                        'trailing_distance_filter': float(row['ts_callback_pct']),
+                        'stop_loss_filter': float(row['sl_pct']) if row['sl_pct'] is not None else 0.0,
+                        'trailing_activation_filter': float(row['ts_activation_pct']) if row['ts_activation_pct'] is not None else 0.0,
+                        'trailing_distance_filter': float(row['ts_callback_pct']) if row['ts_callback_pct'] is not None else 0.0,
                         
                         # Additional fields for info
                         'strategy_name': row['strategy_name'],
                         'market_regime': row['market_regime'],
-                        'strategy_pnl': float(row['strategy_pnl'])
+                        'strategy_pnl': float(row['strategy_pnl']) if row['strategy_pnl'] is not None else 0.0
                     }
                     signals.append(signal)
 
