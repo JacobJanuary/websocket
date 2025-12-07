@@ -255,7 +255,7 @@ class OptimizedSignalServer:
                     signal = {
                         'id': row['signal_id'],
                         'trading_pair_id': None,  # Not in query, but client expects it
-                        'pair_symbol': row['pair_symbol'],
+                        'pair_symbol': row['pair_symbol'] if row['pair_symbol'] is not None else '',
                         'total_score': float(row['total_score']) if row['total_score'] else 0,
                         'score_week': 0.0,  # Not used in optimization
                         'score_month': 0.0,  # Not used in optimization
@@ -267,17 +267,17 @@ class OptimizedSignalServer:
                         'timeframes': [],  # Can be added if needed
                         
                         # Parameters in client format (matching high_score_signal_server)
-                        'recommended_action': row['signal_type'],  # LONG/SHORT
-                        'score_week_filter': 0.0,
-                        'score_month_filter': 0.0,
+                        'recommended_action': row['signal_type'] if row['signal_type'] is not None else 'BUY',  # LONG/SHORT
+                        'score_week_filter': 0,
+                        'score_month_filter': 0,
                         'max_trades_filter': 0,
                         'stop_loss_filter': float(row['sl_pct']) if row['sl_pct'] is not None else 0.0,
                         'trailing_activation_filter': float(row['ts_activation_pct']) if row['ts_activation_pct'] is not None else 0.0,
                         'trailing_distance_filter': float(row['ts_callback_pct']) if row['ts_callback_pct'] is not None else 0.0,
                         
                         # Additional fields for info
-                        'strategy_name': row['strategy_name'],
-                        'market_regime': row['market_regime'],
+                        'strategy_name': row['strategy_name'] if row['strategy_name'] is not None else '',
+                        'market_regime': row['market_regime'] if row['market_regime'] is not None else '',
                         'strategy_pnl': float(row['strategy_pnl']) if row['strategy_pnl'] is not None else 0.0
                     }
                     signals.append(signal)
