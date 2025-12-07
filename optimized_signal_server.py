@@ -152,9 +152,6 @@ class OptimizedSignalServer:
                 -- Aggregate patterns
                 ARRAY_AGG(DISTINCT sp.pattern_type || '_' || sp.timeframe) as patterns,
                 
-                -- Get result/type
-                shr.signal_type,
-                
                 -- Get market regime
                 mr.regime as market_regime
                 
@@ -162,18 +159,13 @@ class OptimizedSignalServer:
             JOIN fas_v2.sh_patterns shp ON shp.scoring_history_id = sh.id
             JOIN fas_v2.signal_patterns sp ON sp.id = shp.signal_patterns_id
             INNER JOIN public.trading_pairs tp ON tp.pair_symbol = sh.pair_symbol
-            LEFT JOIN web.scoring_history_results_v2 shr ON shr.scoring_history_id = sh.id
-            LEFT JOIN fas_v2.market_regime mr ON (
-                mr.timeframe = '15m'
-                AND mr.timestamp <= sh.timestamp
-                AND mr.timestamp > sh.timestamp - INTERVAL '1 hour'
-            )
+            LEFT JOIN fas_v2.sh_regime shr_regime ON shr_regime.scoring_history_id = sh.id
+            LEFT JOIN fas_v2.market_regime mr ON mr.id = shr_regime.signal_regime_id
             WHERE sh.timestamp >= NOW() - INTERVAL '%s minutes'
                 AND tp.exchange_id = 1  -- Binance Futures Only
                 AND tp.contract_type_id = 1
                 AND tp.is_active = true
-                AND shr.signal_type IS NOT NULL
-            GROUP BY sh.id, sh.pair_symbol, sh.timestamp, sh.total_score, sh.score_week, sh.score_month, sh.created_at, tp.id, tp.exchange_id, shr.signal_type, mr.regime
+            GROUP BY sh.id, sh.pair_symbol, sh.timestamp, sh.total_score, sh.score_week, sh.score_month, sh.created_at, tp.id, tp.exchange_id, mr.regime
             HAVING COUNT(DISTINCT sp.id) >= 2  -- Multi-pattern only
         )
         SELECT DISTINCT ON (rs.signal_id)
@@ -181,7 +173,6 @@ class OptimizedSignalServer:
             rs.pair_symbol,
             rs.signal_timestamp,
             rs.created_at,
-            rs.signal_type,
             rs.total_score,
             rs.score_week,
             rs.score_month,
@@ -191,6 +182,7 @@ class OptimizedSignalServer:
             
             -- Optimized Parameters
             bs.strategy_name,
+            bs.signal_type as strategy_signal_type,
             bs.sl_pct,
             bs.ts_activation_pct,
             bs.ts_callback_pct,
@@ -198,8 +190,7 @@ class OptimizedSignalServer:
             
         FROM recent_signals rs
         JOIN best_strategies bs ON (
-            bs.signal_type = rs.signal_type
-            AND bs.market_regime = rs.market_regime
+            bs.market_regime = rs.market_regime
             AND rs.patterns @> bs.required_patterns  -- EXACT pattern match
         )
         WHERE rs.market_regime IS NOT NULL
@@ -273,7 +264,7 @@ class OptimizedSignalServer:
                         'timeframes': [],  # Can be added if needed
                         
                         # Parameters in client format (matching high_score_signal_server)
-                        'recommended_action': row['signal_type'] if row['signal_type'] is not None else 'BUY',  # LONG/SHORT
+                        'recommended_action': row['strategy_signal_type'] if row['strategy_signal_type'] is not None else 'BUY',  # From best_parameters
                         'score_week_filter': float(row['score_week']) if row['score_week'] is not None else 0.0,
                         'score_month_filter': float(row['score_month']) if row['score_month'] is not None else 0.0,
                         'max_trades_filter': 10,
