@@ -143,6 +143,8 @@ class OptimizedSignalServer:
                 sh.pair_symbol,
                 sh.timestamp as signal_timestamp,
                 sh.total_score,
+                sh.score_week,
+                sh.score_month,
                 sh.created_at,
                 tp.id as trading_pair_id,
                 tp.exchange_id,
@@ -171,7 +173,7 @@ class OptimizedSignalServer:
                 AND tp.contract_type_id = 1
                 AND tp.is_active = true
                 AND shr.signal_type IS NOT NULL
-            GROUP BY sh.id, sh.pair_symbol, sh.timestamp, sh.total_score, sh.created_at, tp.id, tp.exchange_id, shr.signal_type, mr.regime
+            GROUP BY sh.id, sh.pair_symbol, sh.timestamp, sh.total_score, sh.score_week, sh.score_month, sh.created_at, tp.id, tp.exchange_id, shr.signal_type, mr.regime
             HAVING COUNT(DISTINCT sp.id) >= 2  -- Multi-pattern only
         )
         SELECT DISTINCT ON (rs.signal_id)
@@ -181,6 +183,8 @@ class OptimizedSignalServer:
             rs.created_at,
             rs.signal_type,
             rs.total_score,
+            rs.score_week,
+            rs.score_month,
             rs.market_regime,
             rs.trading_pair_id,
             rs.exchange_id,
@@ -259,8 +263,8 @@ class OptimizedSignalServer:
                         'trading_pair_id': row['trading_pair_id'] if row['trading_pair_id'] is not None else 'N/A',
                         'pair_symbol': row['pair_symbol'] if row['pair_symbol'] is not None else '',
                         'total_score': float(row['total_score']) if row['total_score'] else 0,
-                        'score_week': 0.0,  # Not used in optimization
-                        'score_month': 0.0,  # Not used in optimization
+                        'score_week': float(row['score_week']) if row['score_week'] is not None else 0.0,
+                        'score_month': float(row['score_month']) if row['score_month'] is not None else 0.0,
                         'timestamp': row['signal_timestamp'].isoformat() if row['signal_timestamp'] else None,
                         'created_at': row['created_at'].isoformat() if row['created_at'] else None,
                         'exchange_id': row['exchange_id'] if row['exchange_id'] is not None else 'N/A',
@@ -270,9 +274,9 @@ class OptimizedSignalServer:
                         
                         # Parameters in client format (matching high_score_signal_server)
                         'recommended_action': row['signal_type'] if row['signal_type'] is not None else 'BUY',  # LONG/SHORT
-                        'score_week_filter': 0,
-                        'score_month_filter': 0,
-                        'max_trades_filter': 0,
+                        'score_week_filter': float(row['score_week']) if row['score_week'] is not None else 0.0,
+                        'score_month_filter': float(row['score_month']) if row['score_month'] is not None else 0.0,
+                        'max_trades_filter': 10,
                         'stop_loss_filter': float(row['sl_pct']) if row['sl_pct'] is not None else 0.0,
                         'trailing_activation_filter': float(row['ts_activation_pct']) if row['ts_activation_pct'] is not None else 0.0,
                         'trailing_distance_filter': float(row['ts_callback_pct']) if row['ts_callback_pct'] is not None else 0.0,
