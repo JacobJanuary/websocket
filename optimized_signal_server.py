@@ -144,6 +144,7 @@ class OptimizedSignalServer:
                 sh.timestamp as signal_timestamp,
                 sh.total_score,
                 sh.created_at,
+                tp.id as trading_pair_id,
                 tp.exchange_id,
                 
                 -- Aggregate patterns
@@ -170,7 +171,7 @@ class OptimizedSignalServer:
                 AND tp.contract_type_id = 1
                 AND tp.is_active = true
                 AND shr.signal_type IS NOT NULL
-            GROUP BY sh.id, sh.pair_symbol, sh.timestamp, sh.total_score, sh.created_at, tp.exchange_id, shr.signal_type, mr.regime
+            GROUP BY sh.id, sh.pair_symbol, sh.timestamp, sh.total_score, sh.created_at, tp.id, tp.exchange_id, shr.signal_type, mr.regime
             HAVING COUNT(DISTINCT sp.id) >= 2  -- Multi-pattern only
         )
         SELECT DISTINCT ON (rs.signal_id)
@@ -181,6 +182,7 @@ class OptimizedSignalServer:
             rs.signal_type,
             rs.total_score,
             rs.market_regime,
+            rs.trading_pair_id,
             rs.exchange_id,
             
             -- Optimized Parameters
@@ -254,7 +256,7 @@ class OptimizedSignalServer:
                 for row in rows:
                     signal = {
                         'id': row['signal_id'],
-                        'trading_pair_id': 'N/A',  # Not in query, but client expects it
+                        'trading_pair_id': row['trading_pair_id'] if row['trading_pair_id'] is not None else 'N/A',
                         'pair_symbol': row['pair_symbol'] if row['pair_symbol'] is not None else '',
                         'total_score': float(row['total_score']) if row['total_score'] else 0,
                         'score_week': 0.0,  # Not used in optimization
