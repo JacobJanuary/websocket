@@ -254,14 +254,14 @@ class OptimizedSignalServer:
                 for row in rows:
                     signal = {
                         'id': row['signal_id'],
-                        'trading_pair_id': None,  # Not in query, but client expects it
+                        'trading_pair_id': 'N/A',  # Not in query, but client expects it
                         'pair_symbol': row['pair_symbol'] if row['pair_symbol'] is not None else '',
                         'total_score': float(row['total_score']) if row['total_score'] else 0,
                         'score_week': 0.0,  # Not used in optimization
                         'score_month': 0.0,  # Not used in optimization
                         'timestamp': row['signal_timestamp'].isoformat() if row['signal_timestamp'] else None,
                         'created_at': row['created_at'].isoformat() if row['created_at'] else None,
-                        'exchange_id': row['exchange_id'],
+                        'exchange_id': row['exchange_id'] if row['exchange_id'] is not None else 'N/A',
                         'contract_type_id': 1,  # Binance Futures
                         'patterns': [],  # Can be added if needed
                         'timeframes': [],  # Can be added if needed
